@@ -1,0 +1,25 @@
+{% extends "clientapp/base.html" %}
+
+{% block title %}Formula 1 API Client Management{% endblock %}
+
+{% block content %}
+<h2 style="color: #847C7C; font-size: 1.2em; margin-top: 20px;">Welcome!</h2>
+<h1 style="font-size: 1.8em;">Formula1 API Client Management Tool</h1>
+<p style="font-size: 1em;"> </p>
+
+<!-- Statistics Box -->
+<div style="background-color: #f8f8f8; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); padding: 15px; margin-top: 20px; border-radius: 5px; display: flex; justify-content: space-around; text-align: center;">
+    <div>
+        <strong style="font-size: 1.5em;">{{ active_clients_count }}</strong><br>
+        <span>Active Users</span>
+    </div>
+    <div>
+        <strong style="font-size: 1.5em;">{{ available_endpoints_count }}</strong><br>
+        <span>Available Endpoints</span>
+    </div>
+    <div>
+        <strong style="font-size: 1.5em;">{{ data_sources_count }}</strong><br>
+        <span>Data Sources</span>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "clientapp/base.html" %}
+
+{% block title %}Client Scopes{% endblock %}
+
+{% block content %}
+<h1>Client Scopes</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Submit</button>
+</form>
+{% endblock %}

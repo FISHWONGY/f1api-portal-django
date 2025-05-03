@@ -1,0 +1,16 @@
+{% extends "clientapp/base.html" %}
+
+{% block title %}Scopes Updated{% endblock %}
+
+{% block content %}
+<h1>Scopes Updated</h1>
+<p>Client ID: <strong>{{ client_id }}</strong></p>
+
+<h2>Scopes:</h2>
+<ul>
+    {% for scope, columns in updated_scopes.items %}
+        <li><strong>{{ scope }}</strong>: {{ columns }}</li>
+    {% endfor %}
+</ul>
+<p><a href="{% url 'index' %}">Return to Home</a></p>
+{% endblock %}

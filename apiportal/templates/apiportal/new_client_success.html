@@ -1,0 +1,21 @@
+{% extends "clientapp/base.html" %}
+
+{% block title %}New Client Created{% endblock %}
+
+{% block content %}
+<h1>New Client Created</h1>
+<p>Client ID: {{ client_id }}</p>
+<p>Client Secret: {{ client_secret }}</p>
+
+{% if granted_scopes %}
+    <h2>Granted:</h2>
+    <ul>
+        {% for scope, columns in granted_scopes.items %}
+            <li><strong>{{ scope }}</strong>: {{ columns }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+<p>Remember to save the client secret securely as it will only be shown once.</p>
+<a href="{% url 'index' %}">Return to Home</a>
+{% endblock %}

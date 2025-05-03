@@ -1,0 +1,158 @@
+{% extends "clientapp/base.html" %}
+
+{% block title %}Edit Client Scopes{% endblock %}
+
+{% block content %}
+<h1>Edit Client Scopes</h1>
+<p>Client ID: {{ client_id }}</p>
+
+<div style="display: flex; justify-content: space-between; gap: 20px;">
+    <div style="flex: 1;">
+        <p>Current Scopes:</p>
+        <ul id="current-scopes-list" ondrop="drop(event)" ondragover="allowDrop(event)"
+            style="list-style-type: none; padding: 10px 0 0 10px; min-height: 200px;
+                   background-color: #fff; border-radius: 5px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); border: none;">
+            {% for scope_data in scopes_data %}
+                <li draggable="true" ondragstart="drag(event)" data-scope="{{ scope_data.scope }}">
+                    <button type="button" onclick="toggleColumns(this)">➕</button> {{ scope_data.scope }}
+                    <div style="display: none; margin-left: 20px;">
+                        {% for column in scope_data.columns %}
+                            <button type="button" onclick="toggleColumn(this, '{{ scope_data.scope }}', '{{ column.name }}')">
+                                {{ column.access|yesno:"➖,➕" }}
+                            </button> {{ column.name }}<br>
+                        {% endfor %}
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div style="flex: 1;">
+        <p>Other Available Scopes:</p>
+        <ul id="other-scopes-list" ondrop="drop(event)" ondragover="allowDrop(event)"
+            style="list-style-type: none; padding: 10px 0 0 10px; min-height: 200px;
+                   background-color: #fff; border-radius: 5px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); border: none;">
+            {% for scope in other_scopes %}
+                <li draggable="true" ondragstart="drag(event)" data-scope="{{ scope }}">
+                    {{ scope }}
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="client_id" value="{{ client_id }}">
+    <textarea id="scope-input" name="scopes" style="display:none;"></textarea>
+    <textarea id="column-access-input" name="column_access" style="display:none;"></textarea>
+    <textarea id="removed-columns-input" name="removed_columns" style="display:none;"></textarea>
+    <textarea id="removed-scopes-input" name="removed_scopes" style="display:none;"></textarea>
+    <button type="submit">Save</button>
+</form>
+
+{% if message %}
+    <p>{{ message }}</p>
+{% endif %}
+
+<script>
+    const columnAccess = {};
+    const removedColumns = {};
+    const removedScopes = new Set();
+
+    function allowDrop(ev) {
+        ev.preventDefault();
+    }
+
+    function drag(ev) {
+        ev.dataTransfer.setData("text", ev.target.getAttribute('data-scope'));
+    }
+
+    function drop(ev) {
+        ev.preventDefault();
+        const data = ev.dataTransfer.getData("text");
+        const targetList = ev.target.closest('ul');
+        const listItem = document.querySelector(`li[data-scope="${data}"]`);
+        listItem.remove();
+
+        if (targetList.id === "current-scopes-list") {
+            listItem.innerHTML = `<button type="button" onclick="toggleColumns(this)">➕</button> ${data}`;
+            removedScopes.delete(data);
+        } else if (targetList.id === "other-scopes-list") {
+            listItem.innerHTML = `${data}`;
+            removedScopes.add(data);
+        }
+
+        targetList.appendChild(listItem);
+        updateScopeInput();
+        updateRemovedScopesInput();
+    }
+
+    function updateScopeInput() {
+        const currentScopes = Array.from(document.querySelectorAll('#current-scopes-list li')).map(li => li.getAttribute('data-scope').trim());
+        document.getElementById('scope-input').value = currentScopes.join(', ');
+    }
+
+    function updateRemovedScopesInput() {
+        document.getElementById('removed-scopes-input').value = Array.from(removedScopes).join(', ');
+    }
+
+    function toggleColumns(button) {
+        const div = button.nextElementSibling;
+        div.style.display = div.style.display === 'none' ? 'block' : 'none';
+        button.textContent = button.textContent === '➕' ? '➖' : '➕';
+    }
+
+    function toggleColumn(button, scope, column) {
+        if (!columnAccess[scope]) {
+            columnAccess[scope] = new Set();
+        }
+        if (!removedColumns[scope]) {
+            removedColumns[scope] = new Set();
+        }
+
+        if (button.textContent === '➖') {
+            button.textContent = '➕';
+            columnAccess[scope].delete(column);
+            removedColumns[scope].add(column);
+        } else {
+            button.textContent = '➖';
+            columnAccess[scope].add(column);
+            removedColumns[scope].delete(column);
+        }
+        updateColumnAccessInput();
+        updateRemovedColumnsInput();
+    }
+
+    function updateColumnAccessInput() {
+        const columnData = Object.entries(columnAccess).map(
+             ([scope, columns]) => `${scope}: ${Array.from(columns).join(', ')}`
+        ).join('; ');
+        document.getElementById('column-access-input').value = columnData;
+    }
+
+    function updateRemovedColumnsInput() {
+        const removedData = Object.entries(removedColumns).map(
+            ([scope, columns]) => `${scope}: ${Array.from(columns).join(', ')}`
+        ).join('; ');
+        document.getElementById('removed-columns-input').value = removedData;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const scopeElements = document.querySelectorAll('#current-scopes-list li');
+        scopeElements.forEach(li => {
+            const scope = li.getAttribute('data-scope').trim();
+            const columnButtons = li.querySelectorAll('div button');
+            columnAccess[scope] = new Set();
+            removedColumns[scope] = new Set();
+            columnButtons.forEach(button => {
+                if (button.textContent === '➖') {
+                    const column = button.nextSibling.textContent.trim();
+                    columnAccess[scope].add(column);
+                }
+            });
+        });
+        updateColumnAccessInput();
+        updateRemovedColumnsInput();
+    });
+</script>
+{% endblock %}

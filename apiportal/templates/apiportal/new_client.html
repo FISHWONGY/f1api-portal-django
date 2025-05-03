@@ -1,0 +1,70 @@
+{% extends "clientapp/base.html" %}
+
+{% block title %}Create New Client{% endblock %}
+
+{% block content %}
+<h1>Create New Client</h1>
+<p>Select Scopes:</p>
+<ul id="endpoint-list" style="list-style-type: none; padding: 0;">
+    {% for scope in scopes_data %}
+        <li>
+            <button type="button" onclick="toggleColumns('{{ scope.scope }}')">➕</button> {{ scope.scope }}
+            <div id="columns-{{ scope.scope }}" style="display: none; margin-left: 20px;">
+                {% for column in scope.columns %}
+                    <button type="button" onclick="toggleColumn(this, '{{ scope.scope }}', '{{ column }}')">➕</button> {{ column }}<br>
+                {% endfor %}
+            </div>
+        </li>
+    {% endfor %}
+</ul>
+<button type="button" onclick="createClient()">Create</button>
+
+<script>
+    const selectedScopes = {};
+
+    function toggleColumns(scope) {
+        const div = document.getElementById(`columns-${scope}`);
+        div.style.display = div.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function toggleColumn(button, scope, column) {
+        if (!selectedScopes[scope]) {
+            selectedScopes[scope] = new Set();
+        }
+        if (selectedScopes[scope].has(column)) {
+            selectedScopes[scope].delete(column);
+            button.textContent = '➕';
+        } else {
+            selectedScopes[scope].add(column);
+            button.textContent = '➖';
+        }
+    }
+
+    function createClient() {
+        const selectedScopesString = Object.keys(selectedScopes).join(', ');
+        const selectedColumns = Object.entries(selectedScopes).map(
+            ([scope, columns]) => `${scope}: ${Array.from(columns).join(', ')}`
+        ).join('; ');
+
+        fetch("{% url 'new_client' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                endpoints: selectedScopesString,
+                columns: selectedColumns
+            })
+        }).then(response => response.json())
+          .then(data => {
+              if (data.success) {
+                  // Redirect directly to the success page without showing the alert
+                  window.location.href = "{% url 'new_client_success' %}?client_id=" + data.client_id;
+              } else {
+                  alert("Error creating client.");
+              }
+          });
+    }
+</script>
+{% endblock %}
